@@ -1,4 +1,4 @@
-import src.grattacieli as gr
+import src.city as gr
 
 
 int_city = gr.InternalCity()
