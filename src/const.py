@@ -1,5 +1,6 @@
 
 # All valid combinations of buildings
+# For every extreme return the possible configurations of skyscrapers
 VALID_CONFIGURATIONS = {
     #(left, right)
     (4, 1): ((1, 2, 3, 4),), # In order
@@ -18,6 +19,7 @@ VALID_CONFIGURATIONS = {
     (1, 2): ((4, 2, 1, 3), (4, 1, 2, 3)),
 }
 
+# For every row, return the extremes
 INVERSE_VC = {
     (1, 2, 3, 4): (4, 1),
     (1, 2, 4, 3): (3, 2),

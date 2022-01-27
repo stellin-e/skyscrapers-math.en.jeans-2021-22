@@ -2,6 +2,10 @@ from typing import List
 from pprint import pprint
 from const import *
 
+def intersect(iter1, iter2):
+    # Intersect two iterables
+    return set(tuple(iter1)) & set(iter2)
+
 class City:
 
     def __init__(self, top: list, left: list, bottom: list, right: list):
@@ -19,108 +23,67 @@ class City:
 
         solution_in_rows = []
         
-        # TODO: Scrivere un vero algoritmo che risolva, adesso
-        # mette semplicemente delle righe
-
-        # Algoritmo 1-4, 2-1, ...
+        #### Insert known values ####
         rows = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] # Two dimensional 4x4 array
-        columns = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
         
-        ######### Solve columns ##############
-        for i in range(4):
-            top = self.top[i]
-            bottom = self.bottom[i]
-            extremes = (top, bottom)
+        #### Generalize cells ####
+        
+        # - Generalize rows
+        for y in range(4):
+            left = self.left[y]
+            right = self.right[y]
+            generalized_row = GENERALIZED_CONFIGURATIONS[(left, right)]
 
-            # 1 at the top, 4 at the bottom
-            if extremes == (1, 4):
-                rows[0][i] = 4
-                rows[1][i] = 3
-                rows[2][i] = 2
-                rows[3][i] = 1
-                
-            # 4 at the top, 1 at the bottom
-            elif extremes == (4, 1):
-                rows[0][i] = 1
-                rows[1][i] = 2
-                rows[2][i] = 3
-                rows[3][i] = 4
+            for x in range(4):
+                rows[y][x] = generalized_row[x]
+        
+        # - Generalize columns
+        for x in range(4):
+            top = self.top[x]
+            bottom = self.bottom[x]
+            generalized_col = GENERALIZED_CONFIGURATIONS[(top, bottom)]
             
-            # 2 at the top, 1 at the bottom
-            elif extremes == (2, 1):
-                rows[0][i] = 3
-                rows[3][i] = 4
-            
-            # 1 at the top, 2 at the bottom
-            elif extremes == (1, 2):
-                rows[0][i] = 4
-                rows[3][i] = 3
+            for y in range(4):
+                cell = rows[y][x]
+                # Intersect the value described by the column with the value described
+                # by the row.
+                if type(cell) == tuple:
+                    new_cell = intersect(cell, generalized_col[y])
+                    rows[y][x] = new_cell
+                    if len(new_cell) == 1:
+                        rows[y][x] = tuple(new_cell)[0]
+        
+        # - Finish rows
+        for y in range(len(rows)):
 
-            # 3 at the top, 2 at the bottom
-            elif extremes == (3, 2):
-                # The third element from the top is always a 4
-                rows[2][i] = 4 
-            
-            # 2 at the top, 3 at the bottom
-            elif extremes == (2, 3):
-                # The third element from the bottom (second from the top) is always a 4
-                rows[1][i] = 4
+            row = rows[y]
 
-            # 1 at the top, 3 at the bottom
-            elif extremes == (1, 3):
-                rows[0][i] = 4
+            known_values = row.copy()
+            last_unknown_value_index = None
             
-            # 3 at the top, 1 at the bottom
-            elif extremes == (3, 1):
-                rows[3][i] = 4
+            for i in range(len(row)):
+                print(i, row)
+                cell = row[i]
 
-        ########## Solve rows #################
-        for i in range(4):
-            left = self.left[i]
-            right = self.right[i]
-            extremes = (left, right)
-
-             # 1 at the left, 4 at the right
-            if extremes == (1, 4):
-                rows[i][0] = 4
-                rows[i][1] = 3
-                rows[i][2] = 2
-                rows[i][3] = 1
+                if type(cell) == set:
+                    print(i)
+                    known_values.remove(cell)
+                    last_unknown_value_index = i
             
-             # 4 at the left, 1 at the right
-            elif extremes == (4, 1):
-                rows[i][0] = 1
-                rows[i][1] = 2
-                rows[i][2] = 3
-                rows[i][3] = 4
-            
-            # 2 at the left, 1 at the right
-            elif extremes == (2, 1):
-                rows[i][0] = 3
-                rows[i][3] = 4
-            
-            # 1 at the left, 2 at the right
-            elif extremes == (1, 2):
-                rows[i][0] = 4
-                rows[i][3] = 3
-
-            # 3 at the left, 2 at the right
-            elif extremes == (3, 2):
-                # The third element from the left is always a 4
-                rows[i][2] = 4 
-            
-            # 2 at the left, 3 at the right
-            elif extremes == (2, 3):
-                # The third element from the right (second from the left) is always a 4
-                rows[i][1] = 4
-            
-            # 1 at the left, 3 at the right
-            elif extremes == (1, 3):
-                rows[i][0] = 4
-            
-            # 3 at the left, 1 at the right
-            elif extremes == (3, 1):
-                rows[i][3] = 4
+            if len(known_values) == 3:
+                unknown_value = row[last_unknown_value_index]
+                # Subtract the set of the unknown value to find the known value.
+                # Ex. unknown_value = {1, 2}
+                #     known_values = {1, 3, 4}
+                #  Then the unkwon value must be 2
+                rows[y][last_unknown_value_index] = unknown_value - set(known_values)
+       
+        for x in range(4):
+            for y in range(4):
+                cell = rows[y][x]
+                if type(cell) == set:
+                    if len(cell) == 1:
+                        rows[y][x] = tuple(cell)[0]
 
         # ######### I don't know ###############
         # if self.check_solution(rows) == False:
@@ -183,9 +146,11 @@ class City:
             Check if a solution given in rows is valid.
             If all the rows and columns are valid, so they are correspond to the
             costant values, then the whole solution is valid.
+
+            TODO: Cleanup algorithm
         """
         valid = False
-        lines_correct = 0 # line = row or column
+        valid_lines = 0 # line = row or column
 
         # Check rows
         for i in range(len(rows)):
@@ -195,9 +160,9 @@ class City:
             right = self.right[i]
             valid_rows = VALID_CONFIGURATIONS[(left, right)]
             if row in valid_rows:
-                lines_correct += 1
+                valid_lines += 1
         
-        if lines_correct == 4:
+        if valid_lines == 4:
             # Check columns
             for i in range(len(rows)):
                 column = tuple([row[i] for row in rows]) # Take the i-th element of each row to make a column
@@ -206,21 +171,18 @@ class City:
                 valid_columns = VALID_CONFIGURATIONS[(top, bottom)]
 
                 if column in valid_columns:
-                    lines_correct += 1
+                    valid_lines += 1
         else:
             return valid
         
-        if lines_correct == 8:
+        if valid_lines == 8:
             valid = True
         
-        if return_formatted == False:
-            return valid
-        else:
-            return self.format(rows)
+        return valid
         
 def main():
-    city = City([2, 1, 2, 3], [3, 1, 2, 1], [3, 1, 2, 1], [2, 1, 2, 3])
-    print(city)
+    city = City([3, 2, 1, 3], [3, 2, 1, 3], [2, 3, 2, 1], [2, 3, 2, 1])
+    print(city.format(city.solve_1st()))
 
 if __name__ == "__main__":
     main()
