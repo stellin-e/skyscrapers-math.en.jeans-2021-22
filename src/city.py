@@ -1,3 +1,4 @@
+from os import unlink
 from typing import List
 from pprint import pprint
 from const import *
@@ -19,6 +20,8 @@ class City:
         return self.format(self.rows)
 
     # 1st algorithm
+    # Very unoptimized algorithm
+    # TODO: Optimize
     def solve_1st(self):
 
         solution_in_rows = []
@@ -62,11 +65,9 @@ class City:
             last_unknown_value_index = None
             
             for i in range(len(row)):
-                print(i, row)
                 cell = row[i]
 
                 if type(cell) == set:
-                    print(i)
                     known_values.remove(cell)
                     last_unknown_value_index = i
             
@@ -77,54 +78,47 @@ class City:
                 #     known_values = {1, 3, 4}
                 #  Then the unkwon value must be 2
                 rows[y][last_unknown_value_index] = unknown_value - set(known_values)
-       
+    
         for x in range(4):
             for y in range(4):
                 cell = rows[y][x]
+                if type(cell) == set and len(cell) == 1:
+                    rows[y][x] = tuple(cell)[0]
+
+        # Finish columns
+        for x in range(len(rows)):
+            col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
+            
+            known_values = col.copy()
+            last_unknown_value_index = None
+
+            for i in range(len(col)):
+                cell = col[i]
+
                 if type(cell) == set:
-                    if len(cell) == 1:
-                        rows[y][x] = tuple(cell)[0]
-
-        # ######### I don't know ###############
-        # if self.check_solution(rows) == False:
-        #     if (
-        #         self.top == self.left and self.bottom == self.right
-        #         or self.top == self.right and self.bottom == self.left
-        #     ):
-        #         possible_combinations = []
-        #         for i in range(len(rows)):
-        #             row = rows[i]
-        #             left = self.left[i]
-        #             right = self.right[i]
-        #             extremes = (left, right)
-
-        #             four_index = row.index(4)
-        #             set_of_combinations = []
-        #             for combination in VALID_CONFIGURATIONS[extremes]:
-        #                 if combination.index(4) == four_index:
-        #                     set_of_combinations.append(combination)
-
-        #             possible_combinations.append(set_of_combinations)
-                
-        #         print(possible_combinations)
-
-        #         # Stupid algorithm
-        #         for i in range(3):
-        #             for j in range(len(rows)):
-        #                 rows[j] = possible_combinations[j][i]
-                    
-        #             if self.check_solution(rows) == True:
-        #                 break
-
-        #         print(self.format(rows))
-
-
-        return rows
-
+                    known_values.remove(cell)
+                    last_unknown_value_index = i
+            
+            if len(known_values) == 3:
+                unknown_value = col[last_unknown_value_index]
+                rows[last_unknown_value_index][x] = unknown_value - set(known_values)
+        
+        for x in range(4):
+            for y in range(4):
+                cell = rows[y][x]
+                if type(cell) == set and len(cell) == 1:
+                    rows[y][x] = tuple(cell)[0]
+        
+        if self.check_solution(rows):
+            return rows
+    
     def format(self, rows=None):
+        invalid = False
+
         if not rows:
             rows = [["x","x","x","x",],["x","x","x","x",],["x","x","x","x",],["x","x","x","x",]]
-        
+            invalid = True
+
         out = f"""┌───┬───┬───┬───┬───┬───┐
 │   │ {self.top[0]} │ {self.top[1]} │ {self.top[2]} │ {self.top[3]} │   │
 ├───┼───┼───┼───┼───┼───┤
@@ -137,7 +131,10 @@ class City:
 │ {self.left[3]} │ {rows[3][0]} │ {rows[3][1]} │ {rows[3][2]} │ {rows[3][3]} │ {self.right[3]} │
 ├───┼───┼───┼───┼───┼───┤
 │   │ {self.bottom[0]} │ {self.bottom[1]} │ {self.bottom[2]} │ {self.bottom[3]} │   │
-└───┴───┴───┴───┴───┴───┘"""
+└───┴───┴───┴───┴───┴───┘\n"""
+
+        if invalid:
+            out += "Invalid city\n"
 
         return out
 
@@ -149,6 +146,7 @@ class City:
 
             TODO: Cleanup algorithm
         """
+        
         valid = False
         valid_lines = 0 # line = row or column
 
