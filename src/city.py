@@ -133,9 +133,9 @@ class City:
                     left = self.left[y]
                     right = self.right[y]
 
-                    vertical_values = set(GENERALIZED_CONFIGURATIONS[(top, bottom)][y])
-                    horizontal_values = (GENERALIZED_CONFIGURATIONS[(left, right)][x])
-
+                    vertical_values = GENERALIZED_CONFIGURATIONS[(top, bottom)][y]
+                    horizontal_values = GENERALIZED_CONFIGURATIONS[(left, right)][x]
+                    
                     rows[y][x] = vertical_values.intersection(horizontal_values)
 
             # Subtract columns
