@@ -112,6 +112,87 @@ class City:
         if self.check_solution(rows):
             return rows
     
+    def solve_optimized(self):
+        
+        try:
+            rows = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ]
+
+            for y in range(len(rows)):
+                row = rows[y]
+                for x in range(len(row)):
+                    cell = row[x]
+
+                    top = self.top[x]
+                    bottom = self.bottom[x]
+                    left = self.left[y]
+                    right = self.right[y]
+
+                    vertical_values = set(GENERALIZED_CONFIGURATIONS[(top, bottom)][y])
+                    horizontal_values = (GENERALIZED_CONFIGURATIONS[(left, right)][x])
+
+                    rows[y][x] = vertical_values.intersection(horizontal_values)
+
+            # Subtract columns
+            for y in range(len(rows)):
+                row = rows[y]
+                known_values = set() # Set with the known values of the row
+                unknown_value = None
+
+                for cell in row:
+                    
+                    if len(cell) == 1:
+                        # NOTE: .update() updates the set with the union of itself and cell
+                        known_values.update(cell)
+                        print("Added known value")
+                    else:
+                        unknown_value = cell
+                
+                if len(known_values) == 3:
+                    # Find the unknown value in the row and subtract its value
+                    # with the known values
+                    unknown_value_index = row.index(unknown_value)                    
+                    rows[y][unknown_value_index] = unknown_value - known_values
+
+            for x in range(len(rows)):
+                
+                col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
+
+                known_values = set() # Set with the known values of the column
+                unknown_value = None
+
+                for cell in col:
+                    
+                    if len(cell) == 1:
+                        # NOTE: .update() updates the set with the union of itself and cell
+                        known_values.update(cell)
+                        print("Added known value")
+                    else:
+                        unknown_value = cell
+                
+                if len(known_values) == 3:
+                    # Find the unknown value in the column and subtract its value
+                    # with the known values
+                    unknown_value_index = col.index(unknown_value)                    
+                    rows[unknown_value_index][x] = unknown_value - known_values
+
+            for y in range(4):
+                for x in range(4):
+                    cell = rows[y][x]
+                    if len(cell) == 1:
+                        rows[y][x] = list(cell)[0]
+
+
+        except Exception as e:
+            print(e)
+            return
+        
+        return rows
+
     def format(self, rows=None):
         invalid = False
 
@@ -180,7 +261,7 @@ class City:
         
 def main():
     city = City([3, 2, 1, 3], [3, 2, 1, 3], [2, 3, 2, 1], [2, 3, 2, 1])
-    print(city.format(city.solve_1st()))
+    print(city.format(city.solve_optimized()))
 
 if __name__ == "__main__":
     main()
