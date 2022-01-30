@@ -19,9 +19,8 @@ class City:
     def __str__(self) -> str:
         return self.format(self.rows)
 
-    # 1st algorithm
+
     # Very unoptimized algorithm
-    # TODO: Optimize
     def solve_1st(self):
 
         solution_in_rows = []
@@ -112,6 +111,8 @@ class City:
         if self.check_solution(rows):
             return rows
     
+    # More optimized algorithm to solve a city.
+    # Gives a solution only when it'
     def solve_optimized(self):
         
         try:
@@ -122,9 +123,9 @@ class City:
                 [0, 0, 0, 0],
             ]
 
-            for y in range(len(rows)):
+            for y in range(4):
                 row = rows[y]
-                for x in range(len(row)):
+                for x in range(4):
                     cell = row[x]
 
                     top = self.top[x]
@@ -138,7 +139,7 @@ class City:
                     rows[y][x] = vertical_values.intersection(horizontal_values)
 
             # Subtract columns
-            for y in range(len(rows)):
+            for y in range(4):
                 row = rows[y]
                 known_values = set() # Set with the known values of the row
                 unknown_value = None
@@ -148,7 +149,6 @@ class City:
                     if len(cell) == 1:
                         # NOTE: .update() updates the set with the union of itself and cell
                         known_values.update(cell)
-                        print("Added known value")
                     else:
                         unknown_value = cell
                 
@@ -158,7 +158,7 @@ class City:
                     unknown_value_index = row.index(unknown_value)                    
                     rows[y][unknown_value_index] = unknown_value - known_values
 
-            for x in range(len(rows)):
+            for x in range(4):
                 
                 col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
 
@@ -170,7 +170,6 @@ class City:
                     if len(cell) == 1:
                         # NOTE: .update() updates the set with the union of itself and cell
                         known_values.update(cell)
-                        print("Added known value")
                     else:
                         unknown_value = cell
                 
@@ -185,7 +184,6 @@ class City:
                     cell = rows[y][x]
                     if len(cell) == 1:
                         rows[y][x] = list(cell)[0]
-
 
         except Exception as e:
             print(e)
@@ -260,7 +258,7 @@ class City:
         return valid
         
 def main():
-    city = City([3, 2, 1, 3], [3, 2, 1, 3], [2, 3, 2, 1], [2, 3, 2, 1])
+    city = City([2, 1, 3, 2], [2, 1, 3, 2], [2, 3, 1, 2], [2, 3, 1, 2])
     print(city.format(city.solve_optimized()))
 
 if __name__ == "__main__":
