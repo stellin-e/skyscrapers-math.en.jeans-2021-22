@@ -1,54 +1,16 @@
-import src.city as gr
+from src.city import City
 
 
-int_city = gr.InternalCity()
+unique_city = City([3, 2, 1, 3], [3, 2, 1, 3], [2, 3, 2, 1], [2, 3, 2, 1])
+not_unique_city = City([2, 1, 3, 2], [2, 1, 3, 2], [2, 3, 1, 2], [2, 3, 1, 2])
 
-# int_city.find_all_diagonal()
-# print(gr.counter, "/ 24 hanno i numeri con le diagonali belle")
-
-
-pattern = [
-    [0, 1, 2, 3],
-    [1, 2, 3, 0],
-    [2, 3, 0, 1],
-    [3, 0, 1, 2]
-]
-# The question is what are all the valid patterns?
-
-
-int_city.find_all_solutions_for_pattern(pattern)
 print(
-    int_city.rows
+    "\nUNIQUE CITY\n" +
+    unique_city.format(unique_city.solve_optimized()),
+    "\n\nNOT UNIQUE CITY\n" +
+    not_unique_city.format(not_unique_city.solve_optimized())
 )
 
-#gr.find_all_patterns()
+c = City([1, 2, 2, 3], [1, 2, 2, 4], [4, 2, 2, 1], [3, 2, 2, 1])
 
-
-
-
-# # Symmetric on diagonal city ( where two nearby sides are equivalent)
-# c1 = gr.City(
-#     [2, 1, 2, 2], # top
-#     [2, 1, 2, 2], # left
-#     [3, 4, 1, 2], # bottom
-#     [3, 4, 1, 2]  # right
-# )
-
-# print(
-#     c1.format(
-#         c1.solve_1st()
-#     )
-# )
-
-# c2 = gr.City(
-#     [3, 2, 1, 3],
-#     [3, 2, 1, 3],
-#     [2, 3, 2, 1],
-#     [2, 3, 2, 1]
-# )
-
-# print(
-#     c2.format(
-#         c2.solve_1st()
-#     )
-# )
+print(c.format(c.solve_optimized()))
