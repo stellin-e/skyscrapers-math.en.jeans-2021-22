@@ -169,7 +169,7 @@ class City:
                     
                     if len(cell) == 1:
                         # NOTE: .update() updates the set with the union of itself and cell
-                        known_values.update(cell)
+                        known_values.update(cell)   
                     else:
                         unknown_value = cell
                 
@@ -193,10 +193,25 @@ class City:
 
     def format(self, rows=None):
         invalid = False
+        # Strings to append at the end of the output
+        append_to_end = []
 
         if not rows:
             rows = [["x","x","x","x",],["x","x","x","x",],["x","x","x","x",],["x","x","x","x",]]
             invalid = True
+
+        for y in range(len(rows)):
+            row = rows[y]
+            for x in range(len(row)):
+                cell = rows[y][x]
+                if type(cell) == set:
+                    set_name =  SETS_NAMES[tuple(cell)]
+                    rows[y][x] = set_name
+                    # String to append at the end of the file to describe the
+                    # the sets
+                    string = f"{set_name} = {cell}"
+                    if string not in append_to_end: 
+                        append_to_end.append(string)
 
         out = f"""┌───┬───┬───┬───┬───┬───┐
 │   │ {self.top[0]} │ {self.top[1]} │ {self.top[2]} │ {self.top[3]} │   │
@@ -214,6 +229,9 @@ class City:
 
         if invalid:
             out += "Invalid city\n"
+
+        for string in append_to_end:
+            out += string + "\n"
 
         return out
 
@@ -258,8 +276,10 @@ class City:
         return valid
         
 def main():
-    city = City([2, 1, 3, 2], [2, 1, 3, 2], [2, 3, 1, 2], [2, 3, 1, 2])
+    city = City([2, 4, 1, 2], [2, 1, 3, 2], [2, 1, 4, 2], [2, 3, 1, 2])
     print(city.format(city.solve_optimized()))
+
+
 
 if __name__ == "__main__":
     main()
