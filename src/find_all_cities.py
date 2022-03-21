@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from const import *
 import numpy as np
+from pprint import pprint
 
 def solve_city(top, left, bottom, right):
     try:
@@ -115,71 +116,112 @@ def check_solution(top, left, bottom, right, rows: list, return_formatted=False)
     
     return valid
 
-# for i in range(10 ** 8):
-#     digits = base_convert(i, 4)
-#     solve_city(digits[0:3], digits[4:7], digits[8:11], digits[12:15])
-     
+
+
+def generalize_row(row):
+    possible_exts = []
+
+    for ext, gen_row in GEN_CONF_TUPLES.items():
+        c = 0
+        for tup, gen_tuple in zip(row, gen_row):
+            
+            for i in tup:
+                if i in gen_tuple:    
+                    c += 1
+                    break
+        
+        if c == 4:
+            possible_exts.append(ext)
+
+    return possible_exts
+
+    
 extremes = [
+    (2, 2),
+    (1, 4),
+    (2, 1),
     (1, 2),
     (1, 3),
-    (1, 4),
-    (2, 2),
     (2, 3),
-
-    (2, 1),
     (3, 1),
     (4, 1),
     (3, 2)
 ]
 
-
-counter = 0
-valids = 0
-total = 9**8
-start_time = datetime.now(timezone.utc)
-try:
-    for i in range(12_104_100, total):
-        result = np.array([
-            1, 1, 1, 
-            1, 1, 1, 
-            1, 1, 1, 
-        ])
-        idx = 0
-        while i > 0:
-            result[idx] = (i % 9) + 1
-            i = i // 9
-            idx += 1
-        
-        i = result
-
-        digits = [extremes[i] for i in range(len(i))]
-
-        top = [digits[0][0], digits[1][0], digits[2][0], digits[3][0]]
-        bottom = [digits[0][1], digits[1][1], digits[2][1], digits[3][1]]
-        left = [digits[4][0], digits[5][0], digits[6][0], digits[7][0]]
-        right = [digits[4][1], digits[5][1], digits[6][1], digits[7][1]]
-
-        solution = solve_city(top, left, bottom, right)
-        check = check_solution(top, left, bottom, right, solution)
-
-        valids += check # 0: Invalid, 1: Valid
-        
-        counter += 1
-
-except KeyboardInterrupt:
-    pass
-finally:
-    stop_time = datetime.now(timezone.utc)
-    delta = stop_time - start_time
-    cities_per_sec = counter/delta.total_seconds()
-    eta = total / cities_per_sec
+invalids = []
+valids = []
+print(
+    generalize_row(
+        ((1, 2, 4,), (3,), (1, 2), (1, 2, 4))
+    )
+)
 
 
-    print(
-f"""
-{valids:,} valid cities on {counter:,} total.
-Time elapsed: {delta}
-Cities/s: {round(cities_per_sec, 2)}
-ETA: {eta:3f} sec
-     {eta/60:.3f} min
-     {eta/3600:.3f} h""")  
+for col1 in extremes:
+    for col2 in extremes:
+        for col3 in extremes:
+            for col4 in extremes:
+                columns = [col1, col2, col3, col4]
+                # Get top and bottom extremes
+                top = [i[0] for i in columns]
+                bottom = [i[1] for i in columns]
+
+                inner_rows = [
+                    [], 
+                    [], 
+                    [], 
+                    []
+                ]
+
+                inner0 = GEN_CONF_TUPLES[(top[0], bottom[0])]
+                inner1 = GEN_CONF_TUPLES[(top[1], bottom[1])]
+                inner2 = GEN_CONF_TUPLES[(top[2], bottom[2])]
+                inner3 = GEN_CONF_TUPLES[(top[3], bottom[3])]
+
+                inners = [inner0, inner1, inner2, inner3]
+
+                for inner in inners:
+                    for i, number in zip(range(len(inner_rows)), inner):
+                        inner_rows[i].append(number)
+
+                try:
+                    # Calculate left and right extremes
+                    left = []
+                    right = []
+
+                    pos_ext0 = generalize_row(inner_rows[0])
+                    pos_ext1 = generalize_row(inner_rows[1])
+                    pos_ext2 = generalize_row(inner_rows[2])
+                    pos_ext3 = generalize_row(inner_rows[3])
+                        
+                    for ext0 in pos_ext0:
+                        for ext1 in pos_ext1:
+                            for ext2 in pos_ext2:
+                                for ext3 in pos_ext3:
+                                    left = [ext0[0], ext1[0], ext2[0], ext3[0]]
+                                    right = [ext0[1], ext1[1], ext2[1], ext3[1]]
+                                    
+                                    borders = [top, left, bottom, right]
+                                    sol = solve_city(*borders)
+                                    
+                                    if sol is None:
+                                        invalids.append(borders)
+                                    else:
+                                        is_valid = check_solution(*borders, sol)
+                                        if is_valid:
+                                            valids.append(borders)
+                                        else:
+                                            invalids.append(borders)
+
+                except KeyError as e:
+                    invalids.append([top, bottom])
+                    
+                    print("\nInvalid\n\n")
+                    input()
+
+print(len(invalids))
+with open("./results/invalids.txt", "w") as f:
+    f.write("\n".join([str(i) for i in invalids]))
+
+with open("./results/unique-valids.txt", "w") as f:
+    f.write("\n".join([str(i) for i in valids]))

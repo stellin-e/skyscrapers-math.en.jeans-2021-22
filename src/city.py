@@ -279,6 +279,10 @@ def main():
     city = City([2, 4, 1, 2], [2, 1, 3, 2], [2, 1, 4, 2], [2, 3, 1, 2])
     print(city.format(city.solve_optimized()))
 
+    non_unique_c = City([1, 2, 2, 3], [1, 2, 2, 4], [3, 2, 2, 1], [4, 2, 2, 1])
+    print(non_unique_c.format(non_unique_c.solve_optimized()))
+
+    print(city.check_solution([[4, 3, 2, 1], [2, 4, 1, 3], [3, 1, 4, 2], [1, 2, 3, 4]]))
 
 
 if __name__ == "__main__":
