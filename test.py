@@ -14,3 +14,14 @@ print(
 c = City([1, 2, 2, 3], [1, 2, 2, 4], [4, 2, 2, 1], [3, 2, 2, 1])
 
 print(c.format(c.solve_optimized()))
+
+#%%
+for i in range(5):
+    print(i)
+    for j in range(3):
+        print("   ",j)
+        inp = input()
+        if inp == ".":
+            break
+# %%
+x = [1, 2, 3]
