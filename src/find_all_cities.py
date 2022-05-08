@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
-from re import I
 from const import *
 import numpy as np
 from pprint import pprint
-import json
 import copy
 
 def format(top, left, bottom, right, rows):
@@ -50,7 +48,6 @@ def format(top, left, bottom, right, rows):
 
         return out
 
-
 def has_unknown_values(rows):
     for y in range(4):
         for x in range(4):
@@ -65,7 +62,7 @@ def unknown_val_indices(rows):
     for y in range(4):
         for x in range(4):
             cell = rows[y][x]
-            if type(cell) == set:
+            if len(cell) > 1:
                 indices.append((y, x))
     
     return indices
@@ -114,6 +111,7 @@ def solve_unique_city(top, left, bottom, right):
                 unknown_value_index = row.index(unknown_value)                    
                 rows[y][unknown_value_index] = unknown_value - known_values
 
+        # Subtract columns
         for x in range(4):
             
             col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
@@ -146,23 +144,22 @@ def solve_unique_city(top, left, bottom, right):
     
     return rows
 
-def solve_non_unique(top, left, bottom, right):
+def solve_non_unique_int(rows: list):
     solutions = []
-    rows = solve_unique_city(top, left, bottom, right)
+
     is_non_unique = has_unknown_values(rows)
-    print("\ninitial", rows)
-    print("non-unique?", is_non_unique)
-    print()
+    #print("\ninitial", rows)
+    #print("non-unique?", is_non_unique, "\n")
 
     # If the city is unique, it's already solved
     if is_non_unique == False:
-        print("Does not have unknown values")
+        #print("Does not have unknown values")
         return rows
 
     # Find unknown values
-    print(rows)
+    ##print(rows)
     ind = unknown_val_indices(rows)
-    print("ind", ind)
+    #print("ind", ind)
 
     # This does not work yet
     for y in range(4):
@@ -171,73 +168,133 @@ def solve_non_unique(top, left, bottom, right):
             if type(cell) == int:
                 rows[y][x] = {cell}
 
-    # TODO: Make this looped
-
     RANGE_LIST = [0, 1, 2, 3]
 
-    while len(ind) > 0:
-        
-        # Choose first unknown index
-        first_cell_pos = ind[0] # Index of first unknown cell
-        print("\nPOSIZIONE", first_cell_pos)
-        first_cell_values = rows[first_cell_pos[0]][first_cell_pos[1]] # Get the values of first index
-        print("Possible values", first_cell_values)
-        
-        # Calculate all solutions for each anchor cells chosen
-        for anchor in first_cell_values:
-            valid = True
-            print("\nvalue:", anchor)
-
-            sol = copy.deepcopy(rows) # Get deep copy of original rows
-            sol[first_cell_pos[0]][first_cell_pos[1]] = {anchor}
-
-            print("modified sol", sol)
-
-            valid_x = RANGE_LIST.copy()
-            valid_x.remove(first_cell_pos[1])
-            
-            valid_y = RANGE_LIST.copy()
-            valid_y.remove(first_cell_pos[0])
-            
-            print("valid_x/y", valid_x, valid_y)
-            # Subtract rows
-            for x in valid_x:
-                cell = sol[first_cell_pos[0]][x]
-                new_value = cell - {anchor}
-                # If an empty set is obtained, the anchor cell is equal to a value on the
-                # row, therefore making the cell invalid
-                if len(new_value) == 0:
-                    valid = False
-                else:
-                    cell -= {anchor}
-
-            # Subtract columns
-            for y in valid_y:
-                cell = sol[y][first_cell_pos[1]]
-                new_value = cell - {anchor}
-                # If an empty set is obtained, the anchor cell is equal to a value on the
-                # row, therefore making the cell invalid
-                if len(new_value) == 0:
-                    valid = False
-                else:
-                    cell -= {anchor}
-                    
-            pprint(sol)
-            print("valid?", valid)
-
-            if valid == True:
-                solutions.append(sol)
+    # Choose first unknown index
+    first_cell_pos = ind[0] # Index of first unknown cell
+    #print("\nPOSIZIONE", first_cell_pos)
+    first_cell_values = rows[first_cell_pos[0]][first_cell_pos[1]] # Get the values of first index
+    #print("Possible values", first_cell_values)
     
-        for sol in solutions:
-            pass
+    # Calculate all solutions for each anchor cells chosen
+    for anchor in first_cell_values:
+        valid = True
+        #print("\nvalue:", anchor)
 
-    return solutions
+        sol = copy.deepcopy(rows) # Get deep copy of original rows
+        sol[first_cell_pos[0]][first_cell_pos[1]] = {anchor}
+
+        #print("modified sol", sol)
+
+        valid_x = RANGE_LIST.copy()
+        valid_x.remove(first_cell_pos[1])
+        
+        valid_y = RANGE_LIST.copy()
+        valid_y.remove(first_cell_pos[0])
+        
+        #print("valid_x/y", valid_x, valid_y)
+        # Subtract rows
+        for x in valid_x:
+            cell = sol[first_cell_pos[0]][x]
+            new_value = cell - {anchor}
+            # If an empty set is obtained, the anchor cell is equal to a value on the
+            # row, therefore making the cell invalid
+            if len(new_value) == 0:
+                valid = False
+            else:
+                cell -= {anchor}
+
+        # Subtract columns
+        for y in valid_y:
+            cell = sol[y][first_cell_pos[1]]
+            new_value = cell - {anchor}
+            # If an empty set is obtained, the anchor cell is equal to a value on the
+            # row, therefore making the cell invalid
+            if len(new_value) == 0:
+                valid = False
+            else:
+                cell -= {anchor}
+                
+        #pprint(sol)
+        #print("valid?", valid)
+
+        if valid == True:
+            solutions.append(sol)
+    
+    new_solutions = []
+    # Find equal values on rows/coluymns
+    for sol in solutions:
+        
+
+        # REDUNDANCY
+        # Subtract columns
+        for y in range(4):
+            row = sol[y]
+            # Set with the unique constant values of the row
+            unique_values = set()
+            # All the constant value in the row
+            all_values = []
+
+            for cell in row:
+                if len(cell) == 1:
+                    unique_values.update(cell)
+                    all_values.append(cell)
+            
+            # If the number of unique values in a row is less than the number of the
+            # total constant values in a row, there are duplicates
+            if len(unique_values) < len(all_values):
+                valid = False
+
+         # Subtract columns
+        for x in range(4):
+            col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
+            unique_values = set()
+            all_values = []
+
+            for cell in col:
+                if len(cell) == 1:
+                    unique_values.update(cell)
+                    all_values.append(cell)
+            
+            if len(unique_values) < len(all_values):
+                valid = False
+
+        if valid == True:
+            new_solutions.append(sol)
+
+    return new_solutions
+
+def solve_non_unique(top, left, bottom, right):
+    rows = solve_unique_city(top, left, bottom, right)
+
+
+    for y in range(4):
+        for x in range(4):
+            cell = rows[y][x]
+            if type(cell) == int:
+                rows[y][x] = {cell}
+
+
+    solutions = []
+
+    sol = solve_non_unique_int(rows)
+
+    pprint(sol)
+
+    # for i in sol:
+    #     print()
+    #     print(i)
+    #     x = solve_non_unique_int(i)
+        
+    #     pprint(x)
+
+
 
 if __name__ == "__main__":
     ext = [[1, 2, 2, 3], [1, 2, 2, 4], [3, 2, 2, 1], [4, 2, 2, 1]]
     x = solve_non_unique(*ext)
-    print("\nsolutions:")
-    pprint(x)
+    # print("\nsolutions:")
+    # pprint(x)
     # for i in x:
     #     print(format(*ext, i))
 
