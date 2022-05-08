@@ -4,6 +4,91 @@ import numpy as np
 from pprint import pprint
 import copy
 
+def complete_obvious_cells(rows):
+    # Subtract columns
+    for y in range(4):
+        row = rows[y]
+        known_values = set() # Set with the known values of the row
+        unknown_value = None
+
+        for cell in row:
+            
+            if len(cell) == 1:
+                # NOTE: .update() updates the set with the union of itself and cell
+                known_values.update(cell)
+            else:
+                unknown_value = cell
+        
+        if len(known_values) == 3:
+            # Find the unknown value in the row and subtract its value
+            # with the known values
+            unknown_value_index = row.index(unknown_value)                    
+            rows[y][unknown_value_index] = unknown_value - known_values
+
+    # Subtract columns
+    for x in range(4):
+        
+        col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
+
+        known_values = set() # Set with the known values of the column
+        unknown_value = None
+
+        for cell in col:
+            
+            if len(cell) == 1:
+                # NOTE: .update() updates the set with the union of itself and cell
+                known_values.update(cell)
+            else:
+                unknown_value = cell
+        
+        if len(known_values) == 3:
+            # Find the unknown value in the column and subtract its value
+            # with the known values
+            unknown_value_index = col.index(unknown_value)                    
+            rows[unknown_value_index][x] = unknown_value - known_values
+    
+    return rows
+
+def has_duplicates(rows):
+    """
+    Calculates whether there are duplicates on a row or column of a city
+    """
+    has_dupes = False
+
+    # Subtract columns
+    for y in range(4):
+        row = rows[y]
+        # Set with the unique constant values of the row
+        unique_values = set()
+        # All the constant value in the row
+        all_values = []
+
+        for cell in row:
+            if len(cell) == 1:
+                unique_values.update(cell)
+                all_values.append(cell)
+        
+        # If the number of unique values in a row is less than the number of the
+        # total constant values in a row, there are duplicates
+        if len(unique_values) < len(all_values):
+            has_dupes = True
+
+        # Subtract columns
+    for x in range(4):
+        col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
+        unique_values = set()
+        all_values = []
+
+        for cell in col:
+            if len(cell) == 1:
+                unique_values.update(cell)
+                all_values.append(cell)
+        
+        if len(unique_values) < len(all_values):
+            has_dupes = True
+
+    return has_dupes
+
 def format(top, left, bottom, right, rows):
         invalid = False
         # Strings to append at the end of the output
@@ -53,7 +138,8 @@ def has_unknown_values(rows):
         for x in range(4):
             cell = rows[y][x]
             if type(cell) == set:
-                return True
+                if len(cell) > 1:
+                    return True
     return False
 
 # Return position of value as (y, x) tuple
@@ -224,75 +310,64 @@ def solve_non_unique_int(rows: list):
     new_solutions = []
     # Find equal values on rows/coluymns
     for sol in solutions:
-        
-
-        # REDUNDANCY
-        # Subtract columns
-        for y in range(4):
-            row = sol[y]
-            # Set with the unique constant values of the row
-            unique_values = set()
-            # All the constant value in the row
-            all_values = []
-
-            for cell in row:
-                if len(cell) == 1:
-                    unique_values.update(cell)
-                    all_values.append(cell)
-            
-            # If the number of unique values in a row is less than the number of the
-            # total constant values in a row, there are duplicates
-            if len(unique_values) < len(all_values):
-                valid = False
-
-         # Subtract columns
-        for x in range(4):
-            col = [rows[0][x], rows[1][x], rows[2][x], rows[3][x]]
-            unique_values = set()
-            all_values = []
-
-            for cell in col:
-                if len(cell) == 1:
-                    unique_values.update(cell)
-                    all_values.append(cell)
-            
-            if len(unique_values) < len(all_values):
-                valid = False
-
-        if valid == True:
+        if not has_duplicates(sol):
             new_solutions.append(sol)
 
     return new_solutions
 
 def solve_non_unique(top, left, bottom, right):
-    rows = solve_unique_city(top, left, bottom, right)
+    try:
+        # Solve unique cells
+        # This is the base city
+        rows = solve_unique_city(top, left, bottom, right)
 
+        for y in range(4):
+            for x in range(4):
+                cell = rows[y][x]
+                if type(cell) == int:
+                    rows[y][x] = {cell}
 
-    for y in range(4):
-        for x in range(4):
-            cell = rows[y][x]
-            if type(cell) == int:
-                rows[y][x] = {cell}
-
-
-    solutions = []
-
-    sol = solve_non_unique_int(rows)
-
-    pprint(sol)
-
-    # for i in sol:
-    #     print()
-    #     print(i)
-    #     x = solve_non_unique_int(i)
+        # Solve non unique part of the base city
+        solutions = []
         
-    #     pprint(x)
+        # TODO: -Clean up and check if always valid
+        # First solve
+        sol = solve_non_unique_int(rows)
+        #pprint(sol)
+        #print(len(sol))
+        #print()
 
-
+        for i in sol:
+            #print(sol.index(i))
+            step2 = solve_non_unique_int(i)
+            #pprint(step2)
+            #print("\n\n")
+            
+            for final_element in step2:
+                #print("BEFORE")
+                #pprint(j)
+                #print()
+                final_element = complete_obvious_cells(final_element)
+                # print("AFTER")
+                # pprint(j)
+        
+                solutions.append(final_element)
+        
+        return solutions
+    
+    # TODO: I don'
+    except Exception:
 
 if __name__ == "__main__":
     ext = [[1, 2, 2, 3], [1, 2, 2, 4], [3, 2, 2, 1], [4, 2, 2, 1]]
     x = solve_non_unique(*ext)
+    print("\n-------------------\n")
+    ext = [[2, 4, 1, 2], [2, 1, 3, 2], [2, 1, 4, 2], [2, 3, 1, 2]]
+    x1 = solve_non_unique(*ext)
+
+    for i in [x, x1]:
+        pprint(i)
+        print()
     # print("\nsolutions:")
     # pprint(x)
     # for i in x:
@@ -306,7 +381,7 @@ def check_solution(top, left, bottom, right, rows: list, return_formatted=False)
 
         TODO: Cleanup algorithm
     """
-    
+
     valid = False
     valid_lines = 0 # line = row or column
 
@@ -351,7 +426,32 @@ def generalize_row(row):
             possible_exts.append(ext)
 
     return possible_exts
+
+def find_symmetries_for_extremes(top, left, bottom, right):
+    # NOTE: list[::-1] inverts list
+    base = [top, left, bottom, right]
+    # Inversions (horizontal, vertical, diagonals)
+    inv_horizontal = [top[::-1], right, bottom[::-1], left]
+    inv_vertical = [bottom, left[::-1], top, right[::-1]]
+    inv_left_diagonal = [right[::-1], bottom[::-1], left[::-1], top[::-1]]
+    inv_right_diagonal = [left, top, right, bottom]
+    # Rotations
+    rot_90_deg_left = [right, top[::-1], left, bottom[::-1]]
+    rot_90_deg_right = [left[::-1], bottom, right[::-1], top]
+    rot_180_deg = [bottom[::-1], right[::-1], top[::-1], left[::-1]]
     
+    # Return all the symmetries
+    return (
+        base,
+        inv_horizontal,
+        inv_vertical,
+        inv_left_diagonal,
+        inv_right_diagonal,
+        rot_90_deg_left,
+        rot_90_deg_right,
+        rot_180_deg
+    )
+
 extremes = [
     (2, 2),
     (1, 4),
@@ -361,7 +461,7 @@ extremes = [
     (2, 3),
     (3, 1),
     (4, 1),
-    (3, 2)
+    (3, 2),
 ]
 
 invalids = []
