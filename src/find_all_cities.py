@@ -1,10 +1,39 @@
-from datetime import datetime, timezone
 from const import *
-import numpy as np
 from pprint import pprint
-import copy
+import copy # Used to make deep copies of nested arrays
+import os
+from ast import literal_eval
+
+def convert_known_cells_to_int(rows):
+    """
+    Function used to convert cells with sets of length 1 to
+    cells with only the int inside the cell
+
+    Ex.: [{1}, {2}, {3, 4}, {4}] --> [1, 2, {3, 4}, 4]
+    """
+
+    for row in rows:
+        for x in range(len(row)):
+            cell = row[x]
+            if type(cell) == set:
+                if len(cell) == 1:
+                    row[x] = list(cell)[0] # Take the first (and only) element of the set
+
+    return rows
+
+x = [[{1}, {2}, {3, 4}, {4}]]
+print(convert_known_cells_to_int(x))
+
 
 def complete_obvious_cells(rows):
+    """
+    Function used to complete obvious rows (rows with 3 known values and 1 variable)
+    """
+    # TODO: Might need fixes, because the variable put in the unknown cell might
+    # not match the values that it can take.
+    # For ex.: if row == [1, 2, {2, 4}, 4] and the func completes it as [1, 2, 3, 4], 
+    # it is wrong
+
     # Subtract columns
     for y in range(4):
         row = rows[y]
@@ -142,8 +171,10 @@ def has_unknown_values(rows):
                     return True
     return False
 
-# Return position of value as (y, x) tuple
 def unknown_val_indices(rows):
+    """
+    Returns position of unknown values as (y, x) tuples
+    """
     indices = []
     for y in range(4):
         for x in range(4):
@@ -154,6 +185,9 @@ def unknown_val_indices(rows):
     return indices
 
 def solve_unique_city(top, left, bottom, right):
+    """
+    Algorithm to solve unique cities and part of non-unique ones
+    """
     try:
         rows = [
             [0, 0, 0, 0],
@@ -231,16 +265,11 @@ def solve_unique_city(top, left, bottom, right):
     return rows
 
 def solve_non_unique_int(rows: list):
+    """
+    Algorithm used to solve non-unique cities given the inner rows
+    """
     solutions = []
 
-    is_non_unique = has_unknown_values(rows)
-    #print("\ninitial", rows)
-    #print("non-unique?", is_non_unique, "\n")
-
-    # If the city is unique, it's already solved
-    if is_non_unique == False:
-        #print("Does not have unknown values")
-        return rows
 
     # Find unknown values
     ##print(rows)
@@ -316,10 +345,17 @@ def solve_non_unique_int(rows: list):
     return new_solutions
 
 def solve_non_unique(top, left, bottom, right):
+    """
+    Algorithm used to solve non-unique cities given the 4 borders
+    """
     try:
         # Solve unique cells
         # This is the base city
         rows = solve_unique_city(top, left, bottom, right)
+
+        # If the city is unique, it's already solved
+        if not has_unknown_values(rows):
+            return [rows]
 
         for y in range(4):
             for x in range(4):
@@ -343,25 +379,26 @@ def solve_non_unique(top, left, bottom, right):
             #pprint(step2)
             #print("\n\n")
             
-            for final_element in step2:
+            # TODO: Is this really the final step?
+            for final_step in step2:
                 #print("BEFORE")
                 #pprint(j)
                 #print()
-                final_element = complete_obvious_cells(final_element)
+                final_step = complete_obvious_cells(final_step)
                 # print("AFTER")
                 # pprint(j)
         
-                solutions.append(final_element)
+                solutions.append(final_step)
         
         return solutions
     
-    # TODO: I don'
+    # TODO: I don't know what exception to use
     except Exception:
+        return None
 
 if __name__ == "__main__":
     ext = [[1, 2, 2, 3], [1, 2, 2, 4], [3, 2, 2, 1], [4, 2, 2, 1]]
     x = solve_non_unique(*ext)
-    print("\n-------------------\n")
     ext = [[2, 4, 1, 2], [2, 1, 3, 2], [2, 1, 4, 2], [2, 3, 1, 2]]
     x1 = solve_non_unique(*ext)
 
@@ -381,6 +418,8 @@ def check_solution(top, left, bottom, right, rows: list, return_formatted=False)
 
         TODO: Cleanup algorithm
     """
+
+    rows = convert_known_cells_to_int(rows)
 
     valid = False
     valid_lines = 0 # line = row or column
@@ -427,18 +466,21 @@ def generalize_row(row):
 
     return possible_exts
 
-def find_symmetries_for_extremes(top, left, bottom, right):
+def find_symmetries(top, left, bottom, right):
+    """
+    Find all symmetries of a specific set of borders (extremes)
+    """
     # NOTE: list[::-1] inverts list
     base = [top, left, bottom, right]
     # Inversions (horizontal, vertical, diagonals)
-    inv_horizontal = [top[::-1], right, bottom[::-1], left]
-    inv_vertical = [bottom, left[::-1], top, right[::-1]]
-    inv_left_diagonal = [right[::-1], bottom[::-1], left[::-1], top[::-1]]
-    inv_right_diagonal = [left, top, right, bottom]
+    inv_horizontal = (top[::-1], right, bottom[::-1], left)
+    inv_vertical = (bottom, left[::-1], top, right[::-1])
+    inv_left_diagonal = (right[::-1], bottom[::-1], left[::-1], top[::-1])
+    inv_right_diagonal = (left, top, right, bottom)
     # Rotations
-    rot_90_deg_left = [right, top[::-1], left, bottom[::-1]]
-    rot_90_deg_right = [left[::-1], bottom, right[::-1], top]
-    rot_180_deg = [bottom[::-1], right[::-1], top[::-1], left[::-1]]
+    rot_90_deg_left = (right, top[::-1], left, bottom[::-1])
+    rot_90_deg_right = (left[::-1], bottom, right[::-1], top)
+    rot_180_deg = (bottom[::-1], right[::-1], top[::-1], left[::-1])
     
     # Return all the symmetries
     return (
@@ -472,74 +514,154 @@ valids = []
 #     )
 # )
 
-flag = False
+flag = True
 
-if flag:
-    for col1 in extremes:
-        for col2 in extremes:
-            for col3 in extremes:
-                for col4 in extremes:
-                    columns = [col1, col2, col3, col4]
-                    # Get top and bottom extremes
-                    top = [i[0] for i in columns]
-                    bottom = [i[1] for i in columns]
+if not flag:
+    quit()
 
-                    inner_rows = [
-                        [], 
-                        [], 
-                        [], 
-                        []
-                    ]
+for col1 in extremes:
+    for col2 in extremes:
+        for col3 in extremes:
+            for col4 in extremes:
+                columns = [col1, col2, col3, col4]
+                # Get top and bottom extremes
+                top = [i[0] for i in columns]
+                bottom = [i[1] for i in columns]
 
-                    inner0 = GEN_CONF_TUPLES[(top[0], bottom[0])]
-                    inner1 = GEN_CONF_TUPLES[(top[1], bottom[1])]
-                    inner2 = GEN_CONF_TUPLES[(top[2], bottom[2])]
-                    inner3 = GEN_CONF_TUPLES[(top[3], bottom[3])]
+                inner_rows = [
+                    [], 
+                    [], 
+                    [], 
+                    []
+                ]
 
-                    inners = [inner0, inner1, inner2, inner3]
+                inner0 = GEN_CONF_TUPLES[(top[0], bottom[0])]
+                inner1 = GEN_CONF_TUPLES[(top[1], bottom[1])]
+                inner2 = GEN_CONF_TUPLES[(top[2], bottom[2])]
+                inner3 = GEN_CONF_TUPLES[(top[3], bottom[3])]
 
-                    for inner in inners:
-                        for i, number in zip(range(len(inner_rows)), inner):
-                            inner_rows[i].append(number)
+                inners = [inner0, inner1, inner2, inner3]
 
-                    try:
-                        # Calculate left and right extremes
-                        left = []
-                        right = []
+                for inner in inners:
+                    for i, number in zip(range(len(inner_rows)), inner):
+                        inner_rows[i].append(number)
 
-                        pos_ext0 = generalize_row(inner_rows[0])
-                        pos_ext1 = generalize_row(inner_rows[1])
-                        pos_ext2 = generalize_row(inner_rows[2])
-                        pos_ext3 = generalize_row(inner_rows[3])
-                            
-                        for ext0 in pos_ext0:
-                            for ext1 in pos_ext1:
-                                for ext2 in pos_ext2:
-                                    for ext3 in pos_ext3:
-                                        left = [ext0[0], ext1[0], ext2[0], ext3[0]]
-                                        right = [ext0[1], ext1[1], ext2[1], ext3[1]]
-                                        
-                                        borders = [top, left, bottom, right]
-                                        sol = solve_unique_city(*borders)
-                                        
-                                        if sol is None:
-                                            invalids.append(borders)
-                                        else:
+                try:
+                    # Calculate left and right extremes
+                    left = []
+                    right = []
+
+                    pos_ext0 = generalize_row(inner_rows[0])
+                    pos_ext1 = generalize_row(inner_rows[1])
+                    pos_ext2 = generalize_row(inner_rows[2])
+                    pos_ext3 = generalize_row(inner_rows[3])
+                        
+                    for ext0 in pos_ext0:
+                        for ext1 in pos_ext1:
+                            for ext2 in pos_ext2:
+                                for ext3 in pos_ext3:
+                                    left = [ext0[0], ext1[0], ext2[0], ext3[0]]
+                                    right = [ext0[1], ext1[1], ext2[1], ext3[1]]
+                                    
+                                    borders = [top, left, bottom, right]
+                                    #sol = solve_unique_city(*borders)
+                                    solutions = solve_non_unique(*borders)
+                                    
+                                
+                                    if not solutions:
+                                        invalids.append(borders)
+                                    else:
+                                        for sol in solutions:
                                             is_valid = check_solution(*borders, sol)
                                             if is_valid:
                                                 valids.append(borders)
                                             else:
                                                 invalids.append(borders)
 
-                    except KeyError as e:
-                        invalids.append([top, bottom])
-                        
-                        print("\nInvalid\n\n")
-                        input()
+                except KeyError as e:
+                    invalids.append([top, bottom])
+                    
+                    print("\nInvalid\n\n")
+                    input()
+print(len(invalids), "invalids")
+print(len(valids), "valids")
 
-    print(len(invalids))
-    with open("./results/invalids.txt", "w") as f:
-        f.write("\n".join([str(i) for i in invalids]))
+BASE_FOLDER = os.path.dirname(os.path.realpath(__file__))
+NON_UNIQUE_VALIDS_PATH = os.path.join(BASE_FOLDER, "results/non-unique-valids.txt")
+NON_UN_VAL_NO_SYMM_PATH = os.path.join(BASE_FOLDER, "results/non-unique-valids-no-symm.txt")
 
-    with open("./results/unique-valids.txt", "w") as f:
-        f.write("\n".join([str(i) for i in valids]))
+print(
+    """
+1: write all non-unique cities to: non-unique-valids.txt
+2: check all and write to: non-unique-valids-no-symm.txt
+3: cross check between the two files
+"""
+    )
+action = input("> ")
+
+# TODO: Use JSON for all of this?
+
+if action == "1":
+    # TODO: Clean up tuple_Valids
+    tuple_valids = []
+    for valid in valids:
+        tuple_valids.append(tuple([tuple(i) for i in valid]))
+
+    tuple_valids = tuple(tuple_valids)
+    with open(NON_UNIQUE_VALIDS_PATH, "w") as f:
+        f.write("\n".join([str(i) for i in tuple_valids]))
+
+elif action == "2":
+    with open(NON_UNIQUE_VALIDS_PATH, "r") as f:
+        lines = f.readlines()
+    
+    # Evaluate every line (which is a tuple) and turn them to tuples
+    valid_cities = [
+        literal_eval(line.strip()) for line in lines 
+    ]
+    # Lookup table for symmetries
+    symm_lookup_table = {}
+    unique_cities = set()
+
+    # Make lookup table
+    for city in valid_cities:
+        symmetries = find_symmetries(*city)
+        # TODO: Make tuples be the return value of the find_symmetries function
+        symmetries = [tuple(s) for s in symmetries]
+        print(symmetries)
+        for symm in symmetries:
+            
+            if symm not in symm_lookup_table:
+                symm_lookup_table[symm] = symmetries[0] # Every symmetry references the base
+                unique_cities.add(city)
+    
+    print(len(unique_cities))
+
+    with open(NON_UN_VAL_NO_SYMM_PATH, "w") as f:
+        f.write("\n".join([str(i) for i in unique_cities]))
+
+# TODO: Fix cross-check
+elif action == "3":
+    with open(NON_UN_VAL_NO_SYMM_PATH, "r") as f:
+        lines = f.readlines()
+    unique_cities = [
+        literal_eval(line.strip()) for line in lines
+    ]
+
+    with open(NON_UNIQUE_VALIDS_PATH, "r") as f:
+        lines = f.readlines()
+    found_non_unique = [
+        literal_eval(line.strip()) for line in lines
+    ]
+
+    all_symmetries = []
+
+    for city in unique_cities:
+        all_symmetries.extend(find_symmetries(*city))
+
+    for found in found_non_unique:
+        if found not in all_symmetries:
+            print(found)
+            raise Exception("There is a mismatch between the two files, so the algorithm is wrong.")
+    
+    print("Cross-check completed successfully!")
